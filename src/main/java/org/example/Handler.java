@@ -46,22 +46,21 @@ public class Handler implements Function<Request, Res> {
 
     @Override
     public Res apply(Request r) {
-//        Jdbi jdbi = Jdbi.create("jdbc:postgresql://158.160.111.255:5432/ff-ext-main", "ff-ext-driver", "F!M(Nou39r34]BUYW2");
         List<String> s3s = r.s3s;
 
 
-        String bucketName = "facebank.store";
-        String endpointUrl = "https://hb.bizmrg.com";
-        String accessKey = "sZejWfNawx8fB9TExfkGk2";
-        String secretKey = "672Fs79oJ2MuLKudfdN5B6nPog13sA6XaXpqKmt9yCm6";
+        String bucketName = ""; //TODO
+        String endpointUrl = "";//TODO
+        String accessKey = "";  //TODO
+        String secretKey = "";  //TODO
         S3Client s3Client = S3Client.builder()
                 .region(Region.EU_CENTRAL_1)
                 .endpointOverride(URI.create(endpointUrl))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
                 .overrideConfiguration(b -> b.apiCallTimeout(Duration.ofMinutes(10)).apiCallAttemptTimeout(Duration.ofMinutes(10)))
                 .build();
-        var n = 0;
-        System.out.println(s3s.size());
+
+
         var doss = new HashMap<String, Set<String>>();
         for (String s3 : s3s) {
             try {
@@ -69,17 +68,11 @@ public class Handler implements Function<Request, Res> {
                 try {
                     GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(s3).build();
                     getObjectResponse = s3Client.getObject(getObjectRequest);
-
                 } catch (S3Exception e) {
                     System.out.println("S3_EXCEPTION: " + s3);
                 }
-
-
-
                 UUID uuid = UUID.randomUUID();
                 File newFile = File.createTempFile(uuid.toString(), "." + s3.split("\\.")[1]);
-
-
                 try (FileOutputStream fileOutputStream = new FileOutputStream(newFile)) {
                     byte[] buffer = new byte[4096];
                     int bytesRead;
@@ -88,22 +81,24 @@ public class Handler implements Function<Request, Res> {
                     }
                 }
 
+
                 var fileSize = Files.size(newFile.toPath());
-//                System.out.println("s3 Key " + s3);
-                long startTime = System.nanoTime(); // Record start time
-                var dossiers = new FindFaceServiceImpl((int) Long.parseLong(r.queryStringParameters.get("name"))).getDossiers(newFile, "Token e6e810685b8e9acc4156591cc7e40029a427c084effc7846535dacec80b9dc5f");
+                long startTime = System.nanoTime();
+
+                var botId = Integer.parseInt(r.queryStringParameters.get("id"));
+                var authToken = r.queryStringParameters.get("token");
+                var dossiers = new FindFaceServiceImpl(botId)
+                        .getDossiers(newFile, "Token " + authToken);
                 doss.put(s3, dossiers);
+
+
                 long endTime = System.nanoTime();
                 long elapsedTime = endTime - startTime;
-
                 double elapsedTimeMs = elapsedTime / 1e6 / 1000;
                 r.avgTime.add(elapsedTimeMs);
                 DecimalFormat df = new DecimalFormat("#.##");
                 System.out.println(new Date() + "| [" + (int) Long.parseLong(r.queryStringParameters.get("name")) + "] | Request took: " + df.format(elapsedTimeMs) + " s | " + s3 + " : " + r.avgTime.size() + " | f_size: " + fileSize);
-
-
                 getObjectResponse.close();
-                n += 1;
             } catch (Exception e) {
                 System.out.println(s3);
                 throw new RuntimeException(e);
