@@ -32,7 +32,6 @@ public class Main {
             while ((line = reader.readLine()) != null) {
                 s3s.add(line);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -41,18 +40,9 @@ public class Main {
             int finalI = i;
             executor.execute(() -> {
                 var q = new HashMap<String, String>();
-                q.put("name", String.valueOf(finalI));
+                q.put("id", String.valueOf(finalI));
+                q.put("token", "e6e810685b8e9acc4156591cc7e40029a427c084effc7846535dacec80b9dc5f");
                 new Handler().apply(new Request(s3s.subList(500 * finalI, 500 * (finalI + 1)), q, avg));
-
-
-//                    Request request = new Request.Builder()
-//                        .url("https://functions.yandexcloud.net/d4ebg0rhmjkh4nai6b7c?name="+ finalI)
-//                        .method("GET", null)
-//                        .build();
-//                    Response response = client.newCall(request).execute();
-//                    System.out.println(response.body().string()); // print or process the response
-//                    response.close(); // Close the response to avoid resource leaks
-
             });
         }
         executor.shutdown();
