@@ -49,10 +49,10 @@ public class Handler implements Function<Request, Res> {
         List<String> s3s = r.s3s;
 
 
-        String bucketName = ""; //TODO
-        String endpointUrl = "";//TODO
-        String accessKey = "";  //TODO
-        String secretKey = "";  //TODO
+        String bucketName = "facebank.store";
+        String endpointUrl = "https://hb.bizmrg.com";
+        String accessKey = "sZejWfNawx8fB9TExfkGk2";
+        String secretKey = "672Fs79oJ2MuLKudfdN5B6nPog13sA6XaXpqKmt9yCm6";
         S3Client s3Client = S3Client.builder()
                 .region(Region.EU_CENTRAL_1)
                 .endpointOverride(URI.create(endpointUrl))
@@ -97,7 +97,7 @@ public class Handler implements Function<Request, Res> {
                 double elapsedTimeMs = elapsedTime / 1e6 / 1000;
                 r.avgTime.add(elapsedTimeMs);
                 DecimalFormat df = new DecimalFormat("#.##");
-                System.out.println(new Date() + "| [" + (int) Long.parseLong(r.queryStringParameters.get("name")) + "] | Request took: " + df.format(elapsedTimeMs) + " s | " + s3 + " : " + r.avgTime.size() + " | f_size: " + fileSize);
+                System.out.println(new Date() + "| [" + (int) Long.parseLong(r.queryStringParameters.get("id")) + "] | Request took: " + df.format(elapsedTimeMs) + " s | " + s3 + " : " + r.avgTime.size() + " | f_size: " + fileSize);
                 getObjectResponse.close();
             } catch (Exception e) {
                 System.out.println(s3);

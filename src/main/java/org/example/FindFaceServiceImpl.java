@@ -23,7 +23,7 @@ public class FindFaceServiceImpl implements FindFaceService {
     private final String threshold = "0.723";
     private final String detectionQuality = String.valueOf(0.4);
     private final String croppedDetectionQuality = String.valueOf(0.4);
-    private final String watchList = String.valueOf(19);
+    private final String watchList = String.valueOf(20); // TODO: список досье
     private final int id;
 
 
