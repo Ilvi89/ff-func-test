@@ -15,16 +15,16 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
-        // TODO: Заменить на нужное кол-во потоков
-        var workers = 50;
+        var workers = 5;
         ExecutorService executor = Executors.newFixedThreadPool(workers);
         var avg = new ConcurrentSkipListSet<Double>();
 
         var s3s = new ArrayList<String>();
-        String fileName = "dataset.csv"; // TODO: список s3 ключей
+        String fileName = "dataset10.csv"; // TODO: список s3 ключей
         FileResourcesUtils resourcesUtils = new FileResourcesUtils();
         InputStream is = resourcesUtils.getFileFromResourceAsStream(fileName);
         try (InputStreamReader streamReader = new InputStreamReader(is, StandardCharsets.UTF_8);
@@ -36,14 +36,16 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        var s3sSize = s3s.size();
         for (int i = 0; i < workers; i++) {
             int finalI = i;
             executor.execute(() -> {
                 var q = new HashMap<String, String>();
                 q.put("id", String.valueOf(finalI));
-                q.put("token", "e6e810685b8e9acc4156591cc7e40029a427c084effc7846535dacec80b9dc5f");
-                var listSize = 10_000 / 50;
-                new Handler().apply(new Request(s3s.subList(listSize * finalI, listSize * (finalI + 1)), q, avg));
+                q.put("token", "aaf09a5a9f5de73405119881bd11896b877be57ecf24cb29d5db6beac0c2673d");
+                var listSize = s3sSize / workers;
+                var res = new Handler().apply(new Request(s3s.subList(listSize * finalI, listSize * (finalI + 1)), q, avg));
+                System.out.println(res.doss);
             });
         }
         executor.shutdown();

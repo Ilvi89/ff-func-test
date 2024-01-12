@@ -15,15 +15,16 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 public class FindFaceServiceImpl implements FindFaceService {
     private final OkHttpClient client;
-    private final String domain = "http://89.208.198.229";
+    private final String domain = "http://95.167.225.149";
     private final String threshold = "0.723";
     private final String detectionQuality = String.valueOf(0.4);
     private final String croppedDetectionQuality = String.valueOf(0.4);
-    private final String watchList = String.valueOf(20); // TODO: список досье
+    private final String watchList = String.valueOf(4); // TODO: список досье
     private final int id;
 
 
@@ -60,7 +61,7 @@ public class FindFaceServiceImpl implements FindFaceService {
         return Optional.of(jsonObject);
     }
 
-    private Optional<JsonArray> sendDetectRequest(File targetFile, String token) throws IOException {
+    private Optional<JsonArray> sendDetectRequest(File targetFile, String token) throws TracebackE, IOException {
         // формируем запрос для обнаружения лица
         MediaType MEDIA_TYPE = MediaType.parse("image/jpeg");
         RequestBody formBody = new MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("photo", targetFile.getName(), RequestBody.create(targetFile, MEDIA_TYPE)).addFormDataPart("attributes", "{\"face\":{}}").build();
@@ -72,19 +73,24 @@ public class FindFaceServiceImpl implements FindFaceService {
         Gson gson = new Gson();
         assert res3.body() != null;
         JsonObject json = gson.fromJson(res3.body().string(), JsonObject.class);
-
+        if (json.get("traceback") != null) {
+            throw new TracebackE();
+        }
         // проверяем не пришел ли пустой JSON объект
         if (json == null || json.get("objects") == null) {
+            System.out.println(json);
             return Optional.empty();
         }
 
         // проверяем не пустой ли списко объектов наименования object
         if (json.get("objects").getAsJsonObject().size() <= 0) {
+            System.out.println(json);
             return Optional.empty();
         }
 
         // проверяем не пришли ли нуловые лица
         if (json.get("objects").getAsJsonObject().get("face") == null) {
+            System.out.println(json);
             return Optional.empty();
         }
 
@@ -97,12 +103,12 @@ public class FindFaceServiceImpl implements FindFaceService {
 
 
 
-    public Set<String> getDossiers(File targetFile, String token) throws IOException {
+    public Map<String, Set<String>> getDossiers(File targetFile, String token) throws IOException, TracebackE {
         // отправляем запрос на обнаружение лиц
         Optional<JsonArray> optionalJsonObject = sendDetectRequest(targetFile, token);
-        if (optionalJsonObject.isEmpty()) return Collections.emptySet();
+        if (optionalJsonObject.isEmpty()) return Collections.emptyMap();
         var detections = optionalJsonObject.get();
-        Set<String> dossiers = new HashSet<>();
+        Map<String, Set<String>> dossiers = new HashMap<>();
 
         // проходимся по списку detection_id
         for (JsonElement detection : detections) {
@@ -119,7 +125,7 @@ public class FindFaceServiceImpl implements FindFaceService {
             // в случае есть досье присуствует, до добаляем в итоговый список
             if (optionalLooksLikeResponse.isPresent()) {
                 var doss = this.handleLooksLikeResponse(optionalLooksLikeResponse.get());
-                dossiers.addAll(doss);
+                dossiers.put(detectionScore + "", new HashSet<>(doss));
             } else {
                 // Если досье еще нет то создаем новое
 
@@ -165,7 +171,7 @@ public class FindFaceServiceImpl implements FindFaceService {
                     String croppedDetectionId = croppedImageDetection.getAsJsonObject().get("id").getAsString();
                     Integer cardId = this.sendPostCardsHumansRequest(token);
                     String newDossier = this.sendPostObjectsFacesRequest(tFile, croppedDetectionId, cardId, token);
-                    dossiers.add(newDossier);
+                    dossiers.put(detectionScore+"", Set.of(newDossier));
                 }
 
                 DeleteFileUtil.deleteFile(tFile);
