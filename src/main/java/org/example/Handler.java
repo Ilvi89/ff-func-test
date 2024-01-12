@@ -64,8 +64,11 @@ public class Handler implements Function<Request, Res> {
         var doss = new HashMap<String, Map<String, Set<String>>>();
         for (String s3 : s3s) {
             s3 = s3 + "_resized_1200.jpg";
+            var count = 1;
             var doLoop = true;
             while (doLoop){
+
+
                 try {
                     ResponseInputStream<GetObjectResponse> getObjectResponse = null;
                     try {
@@ -103,11 +106,17 @@ public class Handler implements Function<Request, Res> {
                     System.out.println(new Date() + "| [" + (int) Long.parseLong(r.queryStringParameters.get("id")) + "] | Request took: " + df.format(elapsedTimeMs) + " s | " + s3 + " : " + r.avgTime.size() + " | f_size: " + fileSize);
                     getObjectResponse.close();
                 } catch (TracebackE e) {
-                    doLoop = true;
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
+                    if (count > 5){
+                        System.out.println("!!!TracebackE count > 5");
+                        doLoop = false;
+                    } else {
+                        doLoop = true;
+                        count++;
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException ex) {
+                            throw new RuntimeException(ex);
+                        }
                     }
                 } catch (Exception e) {
                     System.out.println(s3);

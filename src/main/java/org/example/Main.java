@@ -19,12 +19,12 @@ import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
-        var workers = 5;
+        var workers = 2;
         ExecutorService executor = Executors.newFixedThreadPool(workers);
         var avg = new ConcurrentSkipListSet<Double>();
 
         var s3s = new ArrayList<String>();
-        String fileName = "dataset10.csv"; // TODO: список s3 ключей
+        String fileName = "dataset.csv"; // TODO: список s3 ключей
         FileResourcesUtils resourcesUtils = new FileResourcesUtils();
         InputStream is = resourcesUtils.getFileFromResourceAsStream(fileName);
         try (InputStreamReader streamReader = new InputStreamReader(is, StandardCharsets.UTF_8);
